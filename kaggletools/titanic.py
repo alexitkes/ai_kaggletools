@@ -9,22 +9,22 @@ def extract_title(data, titles=None):
     Create a title column meaning whether the `data.Name` column
     contains Mr, Mrs, Miss, etc.title. Returns a Series of
     integers indicating the titles. Default mapping is the following.
-    
+
     *   0 means Mr
     *   1 means Mrs
     *   2 means Miss
     *   3 means Master
     *   4 means rare titles like Dr, Sir, etc.
-    
+
     This mapping may be customized using the `titles` argument
     (see below).
-    
+
     Parameters
     ----------
     data : pandas.DataFrame
         The data frame that must contain the 'Name' column containing
         the 'Mr', 'Mrs', etc. title in addition to the name itself.
-    
+
     titles : list, default ['Mr', 'Mrs', 'Miss', 'Master', 'Rare']
         The list of interesting titles. It must contain the Mr, Mrs,
         Miss, Master and Rare strings and may contain Dr, Military
@@ -38,7 +38,7 @@ def extract_title(data, titles=None):
         The list of integers of range 0-4 (or `0` to `len (titles) - 1` if
         `titles` argument given) indicating the titles taken from the name
         column. The series index will be same with that of data argument.
-    
+
     Issues
     ------
     *   If `Rare` title not given as interesting, it may be a good idea
