@@ -11,6 +11,20 @@ from kaggletools.titanic import extract_title
 class TestExtractTitle(TestCase):
     """
     Tests for the extract_title function.
+
+    This class contains the following test methods.
+
+    *   ``test_default_titles``
+        Check extract_title behavior with the default title list.
+
+    *   ``test_expand_rare_titles``
+        Check extract_title behavior with the verbose title list,
+        containing indexes for Dr, Military and Royal titles.
+
+    *   ``test_invalid_titles``
+        Check whether `extract_titles` function raises an exception if
+        there is no 'Mr', 'Mrs', 'Miss' or 'Master' title among the
+        list of allowed titles.
     """
 
     def setUp(self):
@@ -59,3 +73,22 @@ class TestExtractTitle(TestCase):
                              [0, 1, 2,
                               2, 3, 4,
                               6, 5, 5])
+
+    def test_invalid_titles(self):
+        """
+        Check whether `extract_titles` function raises an exception if
+        there is no 'Mr', 'Mrs', 'Miss' or 'Master' title among the
+        list of allowed titles.
+        """
+        with self.assertRaises(Exception):
+            # Empty available title list can't be processed.
+            extract_title(self.data, titles=[])
+        with self.assertRaises(Exception):
+            # Some optional titles given, but no required ones.
+            extract_title(self.data, titles=["Rare"])
+        with self.assertRaises(Exception):
+            # Miss and Master titles are also required.
+            extract_title(self.data, titles=["Mr", "Mrs"])
+        with self.assertRaises(Exception):
+            # Mr and Mrs titles are also required.
+            extract_title(self.data, titles=["Master", "Miss"])
