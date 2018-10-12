@@ -4,6 +4,8 @@ in machine learning. See `https://www.kaggle.com/c/titanic` for more
 info.
 """
 
+import warnings
+
 def extract_title(data, titles=None):
     """
     Create a title column meaning whether the `data.Name` column
@@ -39,6 +41,11 @@ def extract_title(data, titles=None):
         `titles` argument given) indicating the titles taken from the name
         column. The series index will be same with that of data argument.
 
+    Raises
+    ------
+    Exception :
+        The Mr, Mrs, Miss and Master title not allowed to return.
+
     Issues
     ------
     *   If `Rare` title not given as interesting, it may be a good idea
@@ -47,6 +54,10 @@ def extract_title(data, titles=None):
     """
     if titles is None:
         titles = ['Mr', 'Mrs', 'Miss', 'Master', 'Rare']
+    else:
+        warnings.warn("Using non-default title list is still an experimental feature and may change without deprecation")
+    if 'Mr' not in titles or 'Mrs' not in titles or 'Miss' not in titles or 'Master' not in titles:
+        raise Exception("Must be able to return Mr, Mrs, Miss and Master titles.")
     def _mapper(x):
         if x in ["Mr"]:
             return titles.index("Mr")
