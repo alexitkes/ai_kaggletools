@@ -5,6 +5,7 @@ Unit tests for the functions analyzing the Titanic data set.
 from unittest import TestCase
 
 import pandas as pd
+import warnings
 
 from kaggletools.titanic import extract_title
 
@@ -64,6 +65,9 @@ class TestExtractTitle(TestCase):
         Check extract_title behavior with the verbose title list,
         containing indexes for Dr, Military and Royal titles.
         """
+        # Suppress warning message displayed every time extract_titles
+        # is used with a custom title list.
+        warnings.filterwarnings('ignore')
         titles = extract_title(self.data,
                                titles=["Mr", "Mrs", "Miss", "Master",
                                        "Dr", "Royal", "Military", "Rare"])
@@ -73,6 +77,8 @@ class TestExtractTitle(TestCase):
                              [0, 1, 2,
                               2, 3, 4,
                               6, 5, 5])
+        # Display any further warnings again.
+        warnings.filterwarnings('default')
 
     def test_invalid_titles(self):
         """
@@ -80,6 +86,9 @@ class TestExtractTitle(TestCase):
         there is no 'Mr', 'Mrs', 'Miss' or 'Master' title among the
         list of allowed titles.
         """
+        # Suppress warning message displayed every time extract_titles
+        # is used with a custom title list.
+        warnings.filterwarnings('ignore')
         with self.assertRaises(Exception):
             # Empty available title list can't be processed.
             extract_title(self.data, titles=[])
@@ -92,3 +101,5 @@ class TestExtractTitle(TestCase):
         with self.assertRaises(Exception):
             # Mr and Mrs titles are also required.
             extract_title(self.data, titles=["Master", "Miss"])
+        # Display any further warnings again.
+        warnings.filterwarnings('default')
