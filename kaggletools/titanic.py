@@ -1,7 +1,7 @@
 """
 Functions anlyzing "Titanic" data set, the training set for beginners
 in machine learning. See `https://www.kaggle.com/c/titanic` for more
-info.
+info about the dataset these functions and classes should analyze.
 
 Public functions defined here:
 
@@ -203,6 +203,40 @@ class CabinCounter(object):
     """
 
     def __init__(self, data, filler=None, simplified=False):
+        """
+        Initialize the cabin survival rate counter object.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The source data frame containing Titanic passengers survival data.
+            It must contain the following columns.
+
+            *   PassengerId - integer, a unique identifier of the passenger.
+
+            *   Cabin - a string containing number of the passenger's Cabin,
+                may be NaN.
+
+            *   Pclass - integer, must be 1, 2 or 3.
+
+            *   Survived - one or zero, may be NaN.
+
+        filler : pd.Series, optional
+            A column to be used as CabinRate values for passengers with no
+            cabin number or a unique cabin number. If None given, the 0.5
+            constant of median survival grouped by Pclass will be used,
+            depending on `simplified` value.
+
+        simplified : boolean, default False
+            Specifies the way of filling cabin rate. The True value means
+            to fill CabinRate with if all other passengers with same cabin
+            number survived, 0 if they all die and 0.5otherwise. If
+            `simplified` is False (the default behavior) the mean Survival
+            value of other passengers of the same cabin will be used.
+            In both cases, the CabinRate value of a passenger is calculated
+            by a data frame without this passenger and does not depend on
+            his/her own survival value.
+        """
         self.data = data
         self.simplified = simplified
         if filler is None:
@@ -216,6 +250,10 @@ class CabinCounter(object):
             self.filler = filler
 
     def fill_cabin_rates(self):
+        """
+        Adds the CabinCount and CabinRate columns to the `self.data` data frame,
+        that is a referrence to the `data` parameter of the constructor.
+        """
         counts = {}
         surv = {}
         died = {}
