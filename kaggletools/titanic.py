@@ -289,7 +289,28 @@ class FamilyPredictor(object):
     """
     Object used to add family survival information to Titanic dataset.
     """
+
     def _new_family(self, i):
+        """
+        Add a new family group to the `self.families` list and place the passenger
+        with index `i` to that group.
+
+        Parameters
+        ----------
+        i : int
+            The index of a passenger that should be added to the new family group.
+            Must be a valid index of `self.data` frame that is a referrence
+            to the `data` argument of the `self` constructor. Note that this
+            function does not add the passenger to the family by itself, it 
+            only sets appropriate family parameters (class, port of embarkation,
+            etc.) to parameters of this passenger.
+
+        Returns
+        -------
+        int :
+            The index of the new family group. It should then be assinged
+            to `self.data.Family[i]` to add the passenger to the new goup.
+        """
         idx = len(self.families)
         self.families.loc[idx,'Pclass'] = self.data.loc[i, "Pclass"]
         self.families.loc[idx,'Embarked'] = self.data.loc[i, "Embarked"]
@@ -299,6 +320,10 @@ class FamilyPredictor(object):
         return idx
 
     def _find_family(self, i):
+        """
+        Looks for a good family group to add the passenger with index `i` to
+        may return an existing group, but also may create a new family group.
+        """
         fams = self.families.loc[(self.families.Pclass == self.data.loc[i, "Pclass"]) & (self.families.Embarked == self.data.loc[i, "Embarked"])]
         if not len(fams):
             return self._new_family(i)
@@ -314,6 +339,10 @@ class FamilyPredictor(object):
             return self._new_family(i)
 
     def _fill_family_ids(self):
+        """
+        Adds the `Family` column to the `self.data` frame. This column will contain
+        the family identifiers assigned to the passengers.
+        """
         self.families = pd.DataFrame(columns=['Pclass', 'Embarked', 'Lastname', 'Id', 'Size'])
         self.data["Family"] = np.NaN
         if self.simplified and self.use_fare:
@@ -390,6 +419,7 @@ class FamilyPredictor(object):
 
             *   Lastname
             *   SecondaryLastname
+            *   Family
             *   FamilyRate
             *   MaleRate
             *   FemaleRate
