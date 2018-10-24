@@ -285,11 +285,9 @@ class CabinCounter(object):
                     self.data.loc[i, "CabinRate"] = float(s) / float(s + d)
         self.data.loc[self.data.CabinRate.isna(), "CabinRate"] = self.filler.loc[self.data.CabinRate.isna()]
 
-class FamilyCorrector(object):
+class FamilyPredictor(object):
     """
-    Corrects predictions of the first model (that only analyaze
-    features of individual passengers) with the second model that
-    analyzes family relations.
+    Object used to add family survival information to Titanic dataset.
     """
     def _new_family(self, i):
         idx = len(self.families)
@@ -373,6 +371,39 @@ class FamilyCorrector(object):
                     self.families.loc[f, "Size"] = 0
 
     def __init__(self, data, filler=None, simplified=False, use_fare=False, fill_if_not_any_survived=False):
+        """
+        Initializes a FamilyPredictor object.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The source data frame. It must contain the following fields.
+
+            *   Name
+            *   PassengerId
+            *   Pclass
+            *   Parch
+            *   SibSp
+            *   Survived
+
+            The following columns will be added to it
+
+            *   Lastname
+            *   SecondaryLastname
+            *   FamilyRate
+            *   MaleRate
+            *   FemaleRate
+            *   ChildRate
+          
+        filler : pandas.Series, optional
+            A column to be used as FamilyRate value for lone passengers.
+
+        simplified : boolean, default False
+            Whether to use the simplified (and possibly more reliable) method
+            of finding kins. It assumes all non-alone passengers with same
+            lastname and fare/pcass are a family (only if the use_fare option
+            is also True).
+        """
         self.data = data
         self.simplified = simplified
         self.use_fare = use_fare
