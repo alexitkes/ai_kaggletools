@@ -4,10 +4,13 @@ Unit tests for the functions analyzing the Titanic data set.
 
 from unittest import TestCase
 
+import numpy as np
 import pandas as pd
 import warnings
 
 from kaggletools.titanic import extract_title
+
+from kaggletools.titanic import TicketCounter
 
 class TestExtractTitle(TestCase):
     """
@@ -103,3 +106,99 @@ class TestExtractTitle(TestCase):
             extract_title(self.data, titles=["Master", "Miss"])
         # Display any further warnings again.
         warnings.filterwarnings('default')
+
+class TestTicketCounter(TestCase):
+    """
+    Tests the titanic.TicketCounter class.
+    """
+    def setUp(self):
+        """
+        Create a sample data frame for testing.
+        """
+        self.data = pd.DataFrame({"PassengerId": [1, 2, 3, 4, 5,
+                                                  6, 7, 8, 9, 10],
+                                  "Ticket": ["A", "B", "C", "C", "B",
+                                             "C", "D", "B", "A", "E"],
+                                  "Pclass": [1, 1, 2, 2, 1,
+                                             2, 3, 1, 1, 3],
+                                  "Survived": [1, 1, 0, 0, np.NaN,
+                                               1, 0, 0, np.NaN, 1]})
+
+
+    def test_ticket_count(self):
+        """
+        Check whether the TicketCounter object fills the TicketCount
+        column properly.
+        """
+        TicketCounter(self.data).fill_ticket_rates()
+        self.assertIn("TicketCount", self.data.columns)
+        self.assertEqual(self.data.TicketCount[0], 2)
+        self.assertEqual(self.data.TicketCount[1], 3)
+        self.assertEqual(self.data.TicketCount[2], 3)
+        self.assertEqual(self.data.TicketCount[3], 3)
+        self.assertEqual(self.data.TicketCount[4], 3)
+        self.assertEqual(self.data.TicketCount[5], 3)
+        self.assertEqual(self.data.TicketCount[6], 1)
+        self.assertEqual(self.data.TicketCount[7], 3)
+        self.assertEqual(self.data.TicketCount[8], 2)
+        self.assertEqual(self.data.TicketCount[9], 1)
+
+    def test_simplified_rate(self):
+        """
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it in basic simplified
+        way.
+        """
+        TicketCounter(self.data, simplified=True).fill_ticket_rates()
+        self.assertIn("TicketRate", self.data.columns)
+        self.assertEqual(self.data.TicketRate[0], 0.5)
+        self.assertEqual(self.data.TicketRate[1], 0.0)
+        self.assertEqual(self.data.TicketRate[2], 0.5)
+        self.assertEqual(self.data.TicketRate[3], 0.5)
+        self.assertEqual(self.data.TicketRate[4], 0.5)
+        self.assertEqual(self.data.TicketRate[5], 0.0)
+        self.assertEqual(self.data.TicketRate[6], 0.5)
+        self.assertEqual(self.data.TicketRate[7], 1.0)
+        self.assertEqual(self.data.TicketRate[8], 1.0)
+        self.assertEqual(self.data.TicketRate[9], 0.5)
+
+    def test_basic_rate(self):
+        """
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it in basic non-simplified
+        way.
+        """
+        TicketCounter(self.data, simplified=False).fill_ticket_rates()
+        self.assertIn("TicketRate", self.data.columns)
+        self.assertAlmostEqual(self.data.TicketRate[0], 2.0 / 3.0)
+        self.assertAlmostEqual(self.data.TicketRate[1], 0.0)
+        self.assertAlmostEqual(self.data.TicketRate[2], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[3], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[4], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[5], 0.0)
+        self.assertAlmostEqual(self.data.TicketRate[6], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[7], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[8], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[9], 0.5)
+
+    def test_simplified_shifted_rate(self):
+        """
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it insimplified
+        way with value 1 if anyone survived and 0 if no one
+        known to survive and anyone known to die.
+        """
+        TicketCounter(self.data,
+                      simplified=True,
+                      fill_if_not_any_survived=True).fill_ticket_rates()
+        self.assertIn("TicketRate", self.data.columns)
+        self.assertAlmostEqual(self.data.TicketRate[0], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[1], 0.0)
+        self.assertAlmostEqual(self.data.TicketRate[2], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[3], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[4], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[5], 0.0)
+        self.assertAlmostEqual(self.data.TicketRate[6], 0.5)
+        self.assertAlmostEqual(self.data.TicketRate[7], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[8], 1.0)
+        self.assertAlmostEqual(self.data.TicketRate[9], 0.5)

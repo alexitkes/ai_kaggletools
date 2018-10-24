@@ -14,6 +14,7 @@ Classed sefined here:
 *   FamilyCorrector
 """
 
+import numpy as np
 import warnings
 
 def extract_title(data, titles=None):
@@ -91,12 +92,65 @@ def extract_title(data, titles=None):
 # The functions used to calculate survival of the passenger's family members.
 #
 class TicketCounter(object):
+    """
+    The object used to calculate the passengers with same ticket number with
+    the specified passenger. It can add the following columns to a data
+    frame containing the Titanic data.
+
+    *   TicketCount - the number of passengers with this ticket number.
+
+    *   TicketRate - percent of survived passengers with the specified
+        ticket number. It may be calculated in different ways depending
+        on the constructor parameters.
+    """
+
     def __init__(self, data, simplified=False, fill_if_not_any_survived=False):
+        """
+        Initialize the ticket counter.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame
+            The source Titanic dataset. The TicketCount and TicketRate
+            columns will be added to it. It must contain the following
+            columns:
+
+            *   PassengerId - integer, must be unique
+            *   Ticket - string, may have duplicates, no NaNs allowed
+            *   Survived - 0, 1 or NaN
+            *   Pclass - integer, 1, 2, or 3
+
+        simplified : bool, default False
+            If True, just fill TicketRate with 1 or 0 values depending on
+            fill_if_not_an_survived parameter. The TicketRate will be filled
+            with 0.5 for rows with Ticket value not encountered in other
+            rows with known survial.
+            If False, TicketRate for every will be filled with mean Survived
+            value of all **other** passengers with the same ticket number.
+            If there is no other passengers with the same ticket number and
+            known Survived value, the mean Survived value for the specified
+            Pclass value will be used.
+
+        fill_if_not_any_survived : bool, default False
+            Only used if simplified is True. The False value (the default)
+            means to fill TicketRate with 1 if all other passengers with
+            same ticket number survived (or unknown) and 0 if they all died.
+            In all other cases, TicketRate will be set to 0.5. The True value
+            leads to a bit obscure behavior that nevertheless caused good
+            results in numerous public kernels. The TicketRate will be set
+            to 1 if any other passenger with the same ticket survived and to
+            0 if no passenger with the same ticket is known to survive and
+            at least one is known to die.
+        """
         self.data = data
         self.simplified = simplified
         self.fill_if_not_any_survived = fill_if_not_any_survived
-    
+
     def fill_ticket_rates(self):
+        """
+        Adds the TicketCount and TicketRate columns to the `self.data` frame
+        referring to the `data` argument of the constructor.
+        """
         counts = {}
         surv = {}
         died = {}
@@ -134,9 +188,20 @@ class TicketCounter(object):
         else:
             for c in self.data.Pclass.unique():
                 self.data.loc[self.data.Pclass == c, "TicketRate"] = self.data.loc[self.data.Pclass == c, "TicketRate"].fillna(self.data.loc[(self.data.Pclass == c), "Survived"].mean())
-        
 
 class CabinCounter(object):
+    """
+    The object used to calculate the passengers with same cabin number with
+    the specified passenger. It can add the following columns to a data
+    frame containing the Titanic data.
+
+    *   CabinCount - the number of passengers with this cabin number.
+
+    *   CabinRate - percent of survived passengers with the specified
+        cabin number. It may be calculated in different ways depending
+        on the constructor parameters.
+    """
+
     def __init__(self, data, filler=None, simplified=False):
         self.data = data
         self.simplified = simplified
@@ -149,7 +214,7 @@ class CabinCounter(object):
                     self.filler.loc[self.data.Pclass == c] = self.data.loc[self.data.Pclass == c, "Survived"].mean()
         else:
             self.filler = filler
-    
+
     def fill_cabin_rates(self):
         counts = {}
         surv = {}
@@ -268,7 +333,7 @@ class FamilyCorrector(object):
                     self.families.loc[self.families.Id == fam_id, "Size"] = self.families.loc[self.families.Id == fam_id, "Size"] + c
                     self.data.loc[data.Family == fid, "Family"] = fam_id
                     self.families.loc[f, "Size"] = 0
-    
+
     def __init__(self, data, filler=None, simplified=False, use_fare=False, fill_if_not_any_survived=False):
         self.data = data
         self.simplified = simplified
@@ -288,7 +353,7 @@ class FamilyCorrector(object):
                     self.filler.loc[self.data.Pclass == c] = self.data.loc[self.data.Pclass == c, "Survived"].mean()
         else:
             self.filler = filler
-    
+
     def fill_family_rates(self):
         self._fill_family_ids()
         self.data["FamilyRate"] = np.NaN
