@@ -110,7 +110,30 @@ class TestExtractTitle(TestCase):
 class TestTicketCounter(TestCase):
     """
     Tests the titanic.TicketCounter class.
+
+    Tests defined here.
+
+    *   `test_ticket_count`
+        Check whether the TicketCounter object fills the TicketCount
+        column properly.
+
+    *   `test_simplified_rate`
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it in basic simplified
+        way.
+
+    *   `test_basic_rate`
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it in basic non-simplified
+        way.
+
+    *   `test_simplified_shifted_rate`
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it insimplified
+        way with value 1 if anyone survived and 0 if no one
+        known to survive and anyone known to die.
     """
+
     def setUp(self):
         """
         Create a sample data frame for testing.
@@ -202,3 +225,9 @@ class TestTicketCounter(TestCase):
         self.assertAlmostEqual(self.data.TicketRate[7], 1.0)
         self.assertAlmostEqual(self.data.TicketRate[8], 1.0)
         self.assertAlmostEqual(self.data.TicketRate[9], 0.5)
+
+class TestCabinCounter(TestCase):
+    """
+    Tests the titanic.CabinCounter class.
+    """
+    pass
