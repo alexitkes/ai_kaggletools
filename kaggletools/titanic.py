@@ -556,17 +556,3 @@ class FamilyPredictor(object):
         self.data.loc[self.data.Age <= 15, "OwnRate"] = self.data.loc[self.data.Age <= 15, "ChildRate"]
         self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'female'), "OwnRate"] = self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'female'), "FemaleRate"]
         self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'male'), "OwnRate"] = self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'male'), "MaleRate"]
-        self.data["NumOlder"] = 0
-        self.data["NumYounger"] = 0
-        self.data["NumParents"] = 0
-        for i in self.data.index:
-            fid = self.data.loc[i, "Family"]
-            age = self.data.loc[i, "Age"]
-            if fid == np.NaN:
-                continue
-            self.data.loc[i, "NumOlder"] = self.data.loc[(self.data.Family == fid) & (self.data.Age > age)].PassengerId.count()
-            self.data.loc[i, "NumYounger"] = self.data.loc[(self.data.Family == fid) & (self.data.Age < age)].PassengerId.count()
-            self.data.loc[i, "NumParents"] = min(self.data.loc[i, "Parch"], self.data.loc[(self.data.Family == fid) & (self.data.Age > age + 20)].PassengerId.count())
-        self.data["AgeRank"] = self.data.NumYounger - self.data.NumOlder
-        self.data["AgeRank"] = pd.cut(self.data.AgeRank, [-25, -2.5, 0, 2.5, 25], labels=False)
-        self.data["NumChildren"] = self.data.Parch - self.data.NumParents
