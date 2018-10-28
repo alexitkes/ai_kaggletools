@@ -438,10 +438,6 @@ class FamilyPredictor(object):
             *   SecondaryLastname - also string extracted from Name
             *   Family - identifier of the family group found for the passenger
             *   FamilyRate - mean survival value for other family members
-            *   MaleRate
-            *   FemaleRate
-            *   ChildRate
-            *   OwnRate
 
         filler : pandas.Series, optional
             A column to be used as FamilyRate value for lone passengers.
@@ -462,11 +458,18 @@ class FamilyPredictor(object):
             lastname and fare fields belong to the same family.
 
         fill_if_not_any_survived : boolean, default False
-            Use a quite obscure but experimettally proved effective method of
+            Use a quite obscure but experimetally proved effective method of
             calculating survival rate. In this case the survival rate is
             set to 1 if at least one other family member survived and to 0
             if no family members known to survive and at least one is known
-            to die.
+            to die. This way is not written by me. I saw it in many public
+            kernels at Kaggle, e. g. the kernel
+            `https://www.kaggle.com/konstantinmasich/titanic-0-82-0-83`
+            by Konstantin,
+            `https://www.kaggle.com/shunjiangxu/blood-is-thicker-than-water-friendship-forever`
+            by S.Xu,
+            `https://www.kaggle.com/danspace/titanic-knn`
+            by Diane Yuan and a number of other kernels.
         """
         self.data = data
         self.simplified = simplified
@@ -489,23 +492,12 @@ class FamilyPredictor(object):
 
     def fill_family_rates(self):
         """
-        Add the "FamilyRate", "ChildRate", "FemaleRate" and "MaleRate" columns
-        to the `self.data` frame. The FamilyRate column is the survival rate of
-        the other members of the passenger's family, calculated as described in
-        the constructor docstring. The ChildRate column will contain the value
-        calculated in the same way but only for family members younger than 16.
-        FemaleRate is the family survival rate value for adult females, and
-        MaleRate is for adult males. These values are actually not too reliable
-        because most families do not contain enough members of all kind.
-        Use of FamilyRate column only is preferable.
-        The OwnRate field is same with ChildRate for children, FemaleRate for
-        adult females and MaleRate for adult males.
+        Add the "FamilyRate" columns to the `self.data` frame. This column
+        contains the survival rate of the other members of the passenger's
+        family, calculated as described in the constructor docstring.
         """
         self._fill_family_ids()
         self.data["FamilyRate"] = np.NaN
-        self.data["ChildRate"] = np.NaN
-        self.data["FemaleRate"] = np.NaN
-        self.data["MaleRate"] = np.NaN
         for i in self.data.index:
             if self.data.loc[i, "Family"] == np.NaN:
                 continue
@@ -524,35 +516,8 @@ class FamilyPredictor(object):
                         self.data.loc[i, "FamilyRate"] = 1.0
                     elif self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid)].Survived.max() == 0.0:
                         self.data.loc[i, "FamilyRate"] = 0.0
-                if self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age <= 15)].Survived.min() == 1.0:
-                    self.data.loc[i, "ChildRate"] = 1.0
-                elif self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age <= 15)].Survived.max() == 0.0:
-                    self.data.loc[i, "ChildRate"] = 0.0
-                if self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'female')].Survived.min() == 1.0:
-                    self.data.loc[i, "FemaleRate"] = 1.0
-                elif self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'female')].Survived.max() == 0.0:
-                    self.data.loc[i, "FemaleRate"] = 0.0
-                if self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'male')].Survived.min() == 1.0:
-                    self.data.loc[i, "MaleRate"] = 1.0
-                elif self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'male')].Survived.max() == 0.0:
-                    self.data.loc[i, "MaleRate"] = 0.0
             else:
                 self.data.loc[i, "FamilyRate"] = self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid)].Survived.mean()
-                self.data.loc[i, "ChildRate"] = self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age <= 15)].Survived.mean()
-                self.data.loc[i, "FemaleRate"] = self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'female')].Survived.mean()
-                self.data.loc[i, "MaleRate"] = self.data.loc[(self.data.Family == fam) & (self.data.PassengerId != pid) & (self.data.Age > 15) & (self.data.Sex == 'male')].Survived.mean()
         self.data.loc[self.data.FamilyRate.isna(), "FamilyRate"] = self.filler.loc[self.data.FamilyRate.isna()]
         if self.simplified and self.fill_if_not_any_survived:
             self.data.loc[self.data.FamilyRate < 0.75, "FamilyRate"] = self.filler.loc[self.data.FamilyRate < 0.75]
-        if self.simplified:
-            self.data["ChildRate"] = self.data["ChildRate"].fillna(0.5)
-            self.data["FemaleRate"] = self.data["FemaleRate"].fillna(0.5)
-            self.data["MaleRate"] = self.data["MaleRate"].fillna(0.5)
-        else:
-            for c in self.data.Pclass.unique():
-                self.data.loc[self.data.Pclass == c, "ChildRate"] = self.data.loc[self.data.Pclass == c, "ChildRate"].fillna(self.data.loc[(self.data.Pclass == c) & (self.data.Age <= 15), "Survived"].mean())
-                self.data.loc[self.data.Pclass == c, "FemaleRate"] = self.data.loc[self.data.Pclass == c, "FemaleRate"].fillna(self.data.loc[(self.data.Pclass == c) & (self.data.Age > 15) & (self.data.Sex == 'female'), "Survived"].mean())
-                self.data.loc[self.data.Pclass == c, "MaleRate"] = self.data.loc[self.data.Pclass == c, "MaleRate"].fillna(self.data.loc[(self.data.Pclass == c) & (self.data.Age > 15) & (self.data.Sex == 'male'), "Survived"].mean())
-        self.data.loc[self.data.Age <= 15, "OwnRate"] = self.data.loc[self.data.Age <= 15, "ChildRate"]
-        self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'female'), "OwnRate"] = self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'female'), "FemaleRate"]
-        self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'male'), "OwnRate"] = self.data.loc[(self.data.Age > 15) & (self.data.Sex == 'male'), "MaleRate"]
