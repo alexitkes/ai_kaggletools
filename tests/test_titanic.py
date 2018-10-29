@@ -11,6 +11,7 @@ import warnings
 from kaggletools.titanic import extract_title
 
 from kaggletools.titanic import TicketCounter
+from kaggletools.titanic import CabinCounter
 
 class TestExtractTitle(TestCase):
     """
@@ -229,5 +230,43 @@ class TestTicketCounter(TestCase):
 class TestCabinCounter(TestCase):
     """
     Tests the titanic.CabinCounter class.
+
+    Tests defined here.
+
+    *   `test_simplified_rate`
+        Check whether the TicketCounter object fills the TicketRate
+        column properly if requested to fill it in basic simplified
+        way.
     """
-    pass
+
+    def setUp(self):
+        """
+        Create a sample data frame for testing.
+        """
+        self.data = pd.DataFrame({"PassengerId": [1, 2, 3, 4, 5,
+                                                  6, 7, 8, 9, 10],
+                                  "Cabin": ["A", "B", "C", "C", "B",
+                                            "C", "D", "B", "A", np.NaN],
+                                  "Pclass": [1, 1, 2, 2, 1,
+                                             2, 3, 1, 1, 3],
+                                  "Survived": [1, 1, 0, 0, np.NaN,
+                                               1, 0, 0, np.NaN, 1]})
+
+    def test_simplified_rate(self):
+        """
+        Check whether the CabinCounter object fills the CabinRate
+        column properly if requested to fill it in basic simplified
+        way.
+        """
+        CabinCounter(self.data, simplified=True).fill_cabin_rates()
+        self.assertIn("CabinRate", self.data.columns)
+        self.assertEqual(self.data.CabinRate[0], 0.5)
+        self.assertEqual(self.data.CabinRate[1], 0.0)
+        self.assertEqual(self.data.CabinRate[2], 0.5)
+        self.assertEqual(self.data.CabinRate[3], 0.5)
+        self.assertEqual(self.data.CabinRate[4], 0.5)
+        self.assertEqual(self.data.CabinRate[5], 0.0)
+        self.assertEqual(self.data.CabinRate[6], 0.5)
+        self.assertEqual(self.data.CabinRate[7], 1.0)
+        self.assertEqual(self.data.CabinRate[8], 1.0)
+        self.assertEqual(self.data.CabinRate[9], 0.5)
