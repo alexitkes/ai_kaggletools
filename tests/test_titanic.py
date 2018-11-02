@@ -12,6 +12,7 @@ from kaggletools.titanic import extract_title
 
 from kaggletools.titanic import TicketCounter
 from kaggletools.titanic import CabinCounter
+from kaggletools.titanic import FamilyPredictor
 
 class TestExtractTitle(TestCase):
     """
@@ -234,9 +235,16 @@ class TestCabinCounter(TestCase):
     Tests defined here.
 
     *   `test_simplified_rate`
-        Check whether the TicketCounter object fills the TicketRate
+        Check whether the CabinCounter object fills the CabinRate
         column properly if requested to fill it in basic simplified
         way.
+
+    *   `test_basic_rate`
+        Check whether the CabinCounter object fills the CabinRate
+        column properly if requested to fill it in standard way.
+
+    *   `test_filler`
+        Test the filler parameter of the CabinCounter.
     """
 
     def setUp(self):
@@ -270,3 +278,109 @@ class TestCabinCounter(TestCase):
         self.assertEqual(self.data.CabinRate[7], 1.0)
         self.assertEqual(self.data.CabinRate[8], 1.0)
         self.assertEqual(self.data.CabinRate[9], 0.5)
+
+    def test_basic_rate(self):
+        """
+        Check whether the CabinCounter object fills the CabinRate
+        column properly if requested to fill it in standard way.
+        """
+        CabinCounter(self.data, simplified=False).fill_cabin_rates()
+        self.assertIn("CabinRate", self.data.columns)
+        self.assertAlmostEqual(self.data.CabinRate[0], 2.0 / 3.0)
+        self.assertAlmostEqual(self.data.CabinRate[1], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[2], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[3], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[4], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[5], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[6], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[7], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[8], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[9], 0.5)
+
+    def test_filler(self):
+        """
+        Test the filler parameter of the CabinCounter.
+        """
+        filler = pd.Series(0.12345, index=self.data.index)
+        CabinCounter(self.data, simplified=False, filler=filler).fill_cabin_rates()
+        self.assertIn("CabinRate", self.data.columns)
+        self.assertAlmostEqual(self.data.CabinRate[0], 0.12345)
+        self.assertAlmostEqual(self.data.CabinRate[1], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[2], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[3], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[4], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[5], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[6], 0.12345)
+        self.assertAlmostEqual(self.data.CabinRate[7], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[8], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[9], 0.12345)
+
+class TestFamilyPredictor(TestCase):
+    """
+    Tests the titanic.FamilyPredictor class.
+
+    Tests defined here.
+
+    *   `test_simplified_rate_with_fare`
+        Check whether the FamilyPredictor object fills the FamilyRate
+        column properly if requested to fill it in basic simplified
+        way and to find families by Lastname and Fare fields.
+    """
+
+    def setUp(self):
+        """
+        Create a sample data frame for testing.
+        """
+        self.data = pd.DataFrame({"Name": ["Smith, Mr. John",
+                                           "Smith, Mrs. Jane",
+                                           "Smith, Ms. Anne",
+                                           "Smith, Ms. Julie",
+                                           "Smith, Master. James",
+                                           "Jones, Dr. Henry",
+                                           "Johnson, Col. William",
+                                           "Grandchester, Sir. Charles",
+                                           # In this family both members survived, so rate = 1
+                                           "McCormack, Countess. Patricia",
+                                           "McCormack, Count. Daniel",
+                                           # The last Smith does not belong to the family.
+                                           "Smith, Mr. Henry",
+                                           # Wife of col. Joshson, they both died, so rate = 0
+                                           "Johnson, Mrs. Jane"],
+                                  "Sex": ["male", "female", "female",
+                                          "female", "male", "male",
+                                          "male", "male", "female",
+                                          "male", "male", "female"],
+                                  "Age": [45.0, 38.0, 15.0,
+                                          12.0, 9.0, 55.0,
+                                          48.0, 38.0, 35.0,
+                                          44.0, 24.0, 34.0],
+                                  "Fare": [30.0, 30.0, 30.0,
+                                           30.0, 30.0, 25.0,
+                                           24.0, 45.0, 55.0,
+                                           55.0, 15.0, 24.0],
+                                  "PassengerId": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                                  "Survived": [0, 1, 0,
+                                               1, np.NaN, np.NaN,
+                                               0, 1, 1,
+                                               1, 0, 0]})
+
+    def test_simplified_rate_with_fare(self):
+        """
+        Check whether the FamilyPredictor object fills the FamilyRate
+        column properly if requested to fill it in basic simplified
+        way and to find families by Lastname and Fare fields.
+        """
+        FamilyPredictor(self.data, simplified=True, use_fare=True).fill_family_rates()
+        self.assertIn("FamilyRate", self.data.columns)
+        self.assertAlmostEqual(self.data.FamilyRate[0], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[1], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[2], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[3], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[4], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[5], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[6], 0.0)
+        self.assertAlmostEqual(self.data.FamilyRate[7], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[8], 1.0)
+        self.assertAlmostEqual(self.data.FamilyRate[9], 1.0)
+        self.assertAlmostEqual(self.data.FamilyRate[10], 0.5)
+        self.assertAlmostEqual(self.data.FamilyRate[11], 0.0)
