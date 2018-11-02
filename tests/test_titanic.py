@@ -234,9 +234,16 @@ class TestCabinCounter(TestCase):
     Tests defined here.
 
     *   `test_simplified_rate`
-        Check whether the TicketCounter object fills the TicketRate
+        Check whether the CabinCounter object fills the CabinRate
         column properly if requested to fill it in basic simplified
         way.
+
+    *   `test_basic_rate`
+        Check whether the CabinCounter object fills the CabinRate
+        column properly if requested to fill it in standard way.
+
+    *   `test_filler`
+        Test the filler parameter of the CabinCounter.
     """
 
     def setUp(self):
@@ -270,3 +277,39 @@ class TestCabinCounter(TestCase):
         self.assertEqual(self.data.CabinRate[7], 1.0)
         self.assertEqual(self.data.CabinRate[8], 1.0)
         self.assertEqual(self.data.CabinRate[9], 0.5)
+
+    def test_basic_rate(self):
+        """
+        Check whether the CabinCounter object fills the CabinRate
+        column properly if requested to fill it in standard way.
+        """
+        CabinCounter(self.data, simplified=False).fill_cabin_rates()
+        self.assertIn("CabinRate", self.data.columns)
+        self.assertAlmostEqual(self.data.CabinRate[0], 2.0 / 3.0)
+        self.assertAlmostEqual(self.data.CabinRate[1], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[2], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[3], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[4], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[5], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[6], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[7], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[8], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[9], 0.5)
+
+    def test_filler(self):
+        """
+        Test the filler parameter of the CabinCounter.
+        """
+        filler = pd.Series(0.12345, index=self.data.index)
+        CabinCounter(self.data, simplified=False, filler=filler).fill_cabin_rates()
+        self.assertIn("CabinRate", self.data.columns)
+        self.assertAlmostEqual(self.data.CabinRate[0], 0.12345)
+        self.assertAlmostEqual(self.data.CabinRate[1], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[2], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[3], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[4], 0.5)
+        self.assertAlmostEqual(self.data.CabinRate[5], 0.0)
+        self.assertAlmostEqual(self.data.CabinRate[6], 0.12345)
+        self.assertAlmostEqual(self.data.CabinRate[7], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[8], 1.0)
+        self.assertAlmostEqual(self.data.CabinRate[9], 0.12345)
