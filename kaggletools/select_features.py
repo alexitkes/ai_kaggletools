@@ -137,3 +137,32 @@ def select_features_descending(data, y, model):
             break
         gc.collect()
     return selected_features
+
+def squash_rare(data, colname, threshold=150, rare_val='Rare'):
+    """
+    Squash a number of rare categories into a single category.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        The source feature matrix. It will be modified after this call, so
+        be careful.
+    
+    colname : str
+        The name of the categorical features
+    
+    threshold : int, default=150
+        Treat all category values encountered less than this number
+        of times as rare and squash them into a single category.
+        In future versions, float values will be acceptable, meaning
+        percentage of total number of rows of source data matrix.
+    
+    rare_val : str or int, default 'Rare'
+        The name of the new category. The default value for it is 'Rare',
+        that is good if category names are all strings. If they are integers,
+        an integer value must be given, best not encountered among existing
+        category values.
+    """
+    rares = data[colname].value_counts() < threshold
+    data[colname] = data[colname].apply(lambda x: rare_val if rares[x] else x)
+
