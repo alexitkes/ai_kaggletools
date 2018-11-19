@@ -20,7 +20,8 @@ def select_features_ascending(data, y, model):
     Parameters
     ----------
     data : pandas.DataFrame
-        The source feature matrix to fit the model on.
+        The source feature matrix to fit the model on. It must be a data
+        frame, not a Numpy array, because every feature should have a name.
 
     y : pandas.Series or numpy.ndarray
         The source target array
@@ -33,6 +34,11 @@ def select_features_ascending(data, y, model):
     -------
     list :
         The list of column names to fit the model on.
+
+    Known bugs
+    ----------
+    It would be good to have a `verbose` option. By default, much debugging
+    output is written to stdout and this is not always good.
     """
     all_features = list(data.columns)
     selected_features = []
@@ -74,12 +80,15 @@ def select_features_ascending(data, y, model):
 def select_features_descending(data, y, model):
     """
     Selects the best features for model fitting. First, fits the model on all
-    features, then tries to remove every single feature.
+    features, then tries to remove every single feature while that can improve
+    the model. That seems to work good, but much slower than
+    `sklearn.feature_selection.RFECV`.
 
     Parameters
     ----------
     data : pandas.DataFrame
-        The source feature matrix to fit the model on.
+        The source feature matrix to fit the model on. It must be a data
+        frame, not a Numpy array, because every feature should have a name.
 
     y : pandas.Series or numpy.ndarray
         The source target array
@@ -92,6 +101,11 @@ def select_features_descending(data, y, model):
     -------
     list :
         The list of column names to fit the model on.
+
+    Known bugs
+    ----------
+    It would be good to have a `verbose` option. By default, much debugging
+    output is written to stdout and this is not always good.
     """
     all_features = list(data.columns)
     selected_features = all_features
