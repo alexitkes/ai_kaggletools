@@ -9,7 +9,7 @@ from sklearn.model_selection import ShuffleSplit
 # Needed to conserve memory
 import gc
 
-def select_features_ascending(data, y, model):
+def select_features_ascending(data, y, model, verbose=False):
     """
     Selects the best features for model fitting. First, selects the first
     feature providing the best-fitted model on this feature only. Then,
@@ -30,6 +30,9 @@ def select_features_ascending(data, y, model):
         The model to be fitted. Currently must be a sklearn-compatible
         regressor.
 
+    verbose : bool, optional
+        Display progress information
+
     Returns
     -------
     list :
@@ -48,7 +51,7 @@ def select_features_ascending(data, y, model):
         best_features = None
         for f in set(all_features) - set(selected_features):
             try_features = selected_features + [f]
-            cv = cross_validate(estimator=pipe,
+            cv = cross_validate(estimator=model,
                                 X=data[try_features].values,
                                 y=y,
                                 scoring='r2',
@@ -60,24 +63,27 @@ def select_features_ascending(data, y, model):
                                 n_jobs=-1)
             score = cv['test_score'].mean()
             score_str = "%lf +/- %lf" % (cv['test_score'].mean(), 3 * cv['test_score'].std())
-            print("Features: %s" % str(try_features))
-            print("  Testing score: %s" % score_str)
+            if verbose:
+                print("Features: %s" % str(try_features))
+                print("  Testing score: %s" % score_str)
             if best_score is None or score > best_score:
                 best_features = try_features
                 best_score = score
                 best_score_str = score_str
         if best_features:
             selected_features = best_features
-            print("Currently selected features: %s" % str(best_features))
-            print("Best score: %s" % best_score_str)
+            if verbose:
+                print("Currently selected features: %s" % str(best_features))
+                print("Best score: %s" % best_score_str)
         else:
-            print("Best features: %s" % str(selected_features))
-            print("Best score: %s" % best_score_str)
+            if verbose:
+                print("Best features: %s" % str(selected_features))
+                print("Best score: %s" % best_score_str)
             break
         gc.collect()
     return selected_features
 
-def select_features_descending(data, y, model):
+def select_features_descending(data, y, model, verbose=False):
     """
     Selects the best features for model fitting. First, fits the model on all
     features, then tries to remove every single feature while that can improve
@@ -97,6 +103,9 @@ def select_features_descending(data, y, model):
         The model to be fitted. Currently must be a sklearn-compatible
         regressor.
 
+    verbose : bool, optional
+        Display progress information
+
     Returns
     -------
     list :
@@ -109,7 +118,7 @@ def select_features_descending(data, y, model):
     """
     all_features = list(data.columns)
     selected_features = all_features
-    cv = cross_validate(estimator=pipe,
+    cv = cross_validate(estimator=model,
                         X=data.values,
                         y=y,
                         scoring='r2',
@@ -125,7 +134,7 @@ def select_features_descending(data, y, model):
         best_features = None
         for f in set(selected_features):
             try_features = list(set(selected_features) - set([f]))
-            cv = cross_validate(estimator=pipe,
+            cv = cross_validate(estimator=model,
                                 X=data[try_features].values,
                                 y=y,
                                 scoring='r2',
@@ -137,17 +146,22 @@ def select_features_descending(data, y, model):
                                 n_jobs=-1)
             score = cv['test_score'].mean()
             score_str = "%lf +/- %lf" % (cv['test_score'].mean(), 3 * cv['test_score'].std())
-            print("Features: %s" % str(try_features))
-            print("  Testing score: %s" % score_str)
+            if verbose:
+                print("Features: %s" % str(try_features))
+                print("  Testing score: %s" % score_str)
             if best_score is None or score > best_score:
                 best_features = try_features
                 best_score = score
                 best_score_str = score_str
         if best_features:
             selected_features = best_features
+            if verbose:
+                print("Currently selected features: %s" % str(best_features))
+                print("Best score: %s" % best_score_str)
         else:
-            print("Best features: %s" % str(selected_features))
-            print("Best score: %s" % best_score_str)
+            if verbose:
+                print("Best features: %s" % str(selected_features))
+                print("Best score: %s" % best_score_str)
             break
         gc.collect()
     return selected_features
@@ -161,16 +175,16 @@ def squash_rare(data, colname, threshold=150, rare_val='Rare'):
     data : pandas.DataFrame
         The source feature matrix. It will be modified after this call, so
         be careful.
-    
+
     colname : str
         The name of the categorical features
-    
+
     threshold : int, default=150
         Treat all category values encountered less than this number
         of times as rare and squash them into a single category.
         In future versions, float values will be acceptable, meaning
         percentage of total number of rows of source data matrix.
-    
+
     rare_val : str or int, default 'Rare'
         The name of the new category. The default value for it is 'Rare',
         that is good if category names are all strings. If they are integers,
@@ -179,4 +193,3 @@ def squash_rare(data, colname, threshold=150, rare_val='Rare'):
     """
     rares = data[colname].value_counts() < threshold
     data[colname] = data[colname].apply(lambda x: rare_val if rares[x] else x)
-
