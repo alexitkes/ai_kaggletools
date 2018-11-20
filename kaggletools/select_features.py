@@ -3,13 +3,18 @@ Select best subset of features to fit the model on. So far for regression
 models only.
 """
 
+import numpy as np
+
+from sklearn.base import BaseEstimator
+from sklearn.base import TransformerMixin
+
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import ShuffleSplit
 
 # Needed to conserve memory
 import gc
 
-def select_features_ascending(data, y, model, verbose=False):
+def select_features_ascending(data, y, model, verbose=False, starting_features=None, n_jobs=None):
     """
     Selects the best features for model fitting. First, selects the first
     feature providing the best-fitted model on this feature only. Then,
@@ -33,6 +38,12 @@ def select_features_ascending(data, y, model, verbose=False):
     verbose : bool, optional
         Display progress information
 
+    starting_features : list, optional
+        Start with this set of features, default is start with empty set.
+
+    n_jobs : int, optional
+        Pass this as n_jobs to cross_validators.
+
     Returns
     -------
     list :
@@ -45,6 +56,8 @@ def select_features_ascending(data, y, model, verbose=False):
     """
     all_features = list(data.columns)
     selected_features = []
+    if starting_features:
+        selected_features.extend(starting_features)
     best_score = None
     best_score_str = None
     for n in range(0, len(all_features)):
@@ -60,7 +73,7 @@ def select_features_ascending(data, y, model, verbose=False):
                                                 random_state=0,
                                                 train_size=0.75,
                                                 test_size=0.25),
-                                n_jobs=-1)
+                                n_jobs=n_jobs)
             score = cv['test_score'].mean()
             score_str = "%lf +/- %lf" % (cv['test_score'].mean(), 3 * cv['test_score'].std())
             if verbose:
@@ -83,7 +96,7 @@ def select_features_ascending(data, y, model, verbose=False):
         gc.collect()
     return selected_features
 
-def select_features_descending(data, y, model, verbose=False):
+def select_features_descending(data, y, model, verbose=False, n_jobs=None):
     """
     Selects the best features for model fitting. First, fits the model on all
     features, then tries to remove every single feature while that can improve
@@ -106,6 +119,9 @@ def select_features_descending(data, y, model, verbose=False):
     verbose : bool, optional
         Display progress information
 
+    n_jobs : int, optional
+        Pass this as n_jobs to cross_validators.
+
     Returns
     -------
     list :
@@ -127,7 +143,7 @@ def select_features_descending(data, y, model, verbose=False):
                                         random_state=0,
                                         train_size=0.75,
                                         test_size=0.25),
-                        n_jobs=-1)
+                        n_jobs=n_jobs)
     best_score = cv['test_score'].mean()
     best_score_str = "%lf +/- %lf" % (cv['test_score'].mean(), 3 * cv['test_score'].std())
     for n in range(0, len(all_features)):
@@ -143,7 +159,7 @@ def select_features_descending(data, y, model, verbose=False):
                                                 random_state=0,
                                                 train_size=0.75,
                                                 test_size=0.25),
-                                n_jobs=-1)
+                                n_jobs=n_jobs)
             score = cv['test_score'].mean()
             score_str = "%lf +/- %lf" % (cv['test_score'].mean(), 3 * cv['test_score'].std())
             if verbose:
@@ -193,3 +209,30 @@ def squash_rare(data, colname, threshold=150, rare_val='Rare'):
     """
     rares = data[colname].value_counts() < threshold
     data[colname] = data[colname].apply(lambda x: rare_val if rares[x] else x)
+
+
+class SumDiffTransformer(BaseEstimator, TransformerMixin):
+    """
+    Extends the feature set by adding sums and differences of every
+    pair of source features as new features. Does not affect quality
+    of linear models, but may be good for tree-based models, despite
+    will make them REALLY slower.
+    """
+
+    def __init__(self):
+        super(SumDiffTransformer, self).__init__()
+    
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X_new = np.zeros([X.shape[0], X.shape[1] * X.shape[1]])
+        for i in range(0, X.shape[1]):
+            for j in range(0, X_old.shape[1]):
+                if i > j:
+                    X_new[:, i * X_old.shape[1] + j] = X[:, i] + X[:, j]
+                elif i < j:
+                    X_new[:, i * X_old.shape[1] + j] = X[:, i] - X[:, j]
+                else:
+                    X_new[:, i * X_old.shape[1] + j] = X[:, i]
+        return X_new
