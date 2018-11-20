@@ -220,19 +220,30 @@ class SumDiffTransformer(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self):
+        """
+        Initialize the transformer. It does nothing so far.
+        """
         super(SumDiffTransformer, self).__init__()
-    
+
     def fit(self, X, y=None):
+        """
+        This transformer does not fit at all, required for
+        compatibility.
+        """
         return self
 
     def transform(self, X):
+        """
+        Does the transformation. Preserves the original features and
+        adds their sums and differences.
+        """
         X_new = np.zeros([X.shape[0], X.shape[1] * X.shape[1]])
         for i in range(0, X.shape[1]):
-            for j in range(0, X_old.shape[1]):
+            for j in range(0, X.shape[1]):
                 if i > j:
-                    X_new[:, i * X_old.shape[1] + j] = X[:, i] + X[:, j]
+                    X_new[:, i * X.shape[1] + j] = X[:, i] + X[:, j]
                 elif i < j:
-                    X_new[:, i * X_old.shape[1] + j] = X[:, i] - X[:, j]
+                    X_new[:, i * X.shape[1] + j] = X[:, i] - X[:, j]
                 else:
-                    X_new[:, i * X_old.shape[1] + j] = X[:, i]
+                    X_new[:, i * X.shape[1] + j] = X[:, i]
         return X_new
